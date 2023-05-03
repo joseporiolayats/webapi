@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["joseporiolayats <oriol.ayats@gmail.com>"]
 readme = "README.md"
-packages = [{include = "webapi_code_assessment"}]
+# packages = [{include = "webapi_code_assessment"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
