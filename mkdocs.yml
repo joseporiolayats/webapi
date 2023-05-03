@@ -1,0 +1,82 @@
+# Project information
+site_name: WebAPI
+site_url: https://joseporiolayats.github.io/webapi
+site_description: Simple backend API for some calls
+site_author: Josep Oriol Ayats
+
+# Repository
+repo_url: https://github.com/joseporiolayats/webapi
+repo_name: joseporiolayats/webapi
+
+edit_uri: "" #disables edit button
+
+# Configuration
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: light-blue
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: deep orange
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+
+
+# Extensions
+markdown_extensions:
+  - admonition # alerts
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      guess_lang: false
+      pygments_lang_class: true
+      extend_pygments_lang:
+        - name: pycon3
+          lang: pycon
+          options:
+            python3: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+
+          # Plugins
+plugins:
+  - search
+  - autorefs
+  - mkdocstrings:
+      enabled: true
+      custom_templates: templates
+      default_handler: python
+      handlers:
+        python:
+          paths: [webapi]
+          options:
+            show_source: false
+extra_javascript:
+  - extra/refresh_on_toggle_dark_light.js
+
+
+# Page tree
+nav:
+  - Home: index.md
+  - Assessment:
+      - Problem: problem.md
+      - Data: data.md
+      - Solution: solution.md
+  - Use-case: usage.md
+
+
+# to navigate with `/site` content correctly
+use_directory_urls: true
+
+# Live reload and keep track of directories
+watch:
+  - .
