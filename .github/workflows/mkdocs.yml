@@ -1,0 +1,44 @@
+---
+name: Documentation
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+# Allow one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  # Build job
+  deploy-documentation:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+      # install poetry
+      - name: Install poetry
+        run: pipx install poetry
+      # set-up python with cache
+      - name: Set up python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'poetry'
+
+      # Install dependencies
+      - name: Install dependencies
+        run: poetry install --only docs
+
+
+      # build & deploy docs
+      - name: Build docs
+        run: |
+          set -o pipefail
+          poetry run make docs-deploy
