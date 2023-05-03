@@ -5,6 +5,8 @@ on:
   workflow_dispatch:
   release:
     types: [published]
+permissions:
+  contents: write
 
 # Allow one concurrent deployment
 concurrency:
