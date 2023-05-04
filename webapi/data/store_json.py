@@ -5,9 +5,10 @@ from typing import Dict
 from typing import List
 from typing import Union
 
-import requests
+import aiohttp
 
 from webapi.data.database import MongoDBAtlasCRUD
+from webapi.logs.logger import app_logger
 
 
 class JSONDataToMongoDB:
@@ -30,7 +31,7 @@ class JSONDataToMongoDB:
         """
         self.mongo_crud = mongo_crud
 
-    def fetch_data_from_json_url(self, url: str) -> Union[Dict, List, None]:
+    async def fetch_data_from_json_url(self, url: str) -> Union[Dict, List, None]:
         """Fetches JSON data from the given URL.
 
         Args:
@@ -40,15 +41,16 @@ class JSONDataToMongoDB:
             Union[Dict, List, None]: The fetched JSON data as a dictionary or a
             list of dictionaries, or None if there's an error.
         """
-        try:
-            response = requests.get(url)
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            print(f"Error fetching JSON data from URL: {e}")
-            return None
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(url) as response:
+                    response.raise_for_status()
+                    return await response.json()
+            except aiohttp.ClientError as e:
+                app_logger.error(f"Error fetching JSON data from URL: {e}")
+                return None
 
-    def store_json_data(self, data: Union[Dict, List]) -> None:
+    async def store_json_data(self, data: Union[Dict, List]) -> None:
         """Stores the given JSON data into the MongoDB Atlas database using the
          MongoDBAtlasCRUD instance.
 
@@ -60,16 +62,16 @@ class JSONDataToMongoDB:
             None
         """
         if data is None:
-            print("No data to store")
+            app_logger.error("No data to store")
             return
 
         if isinstance(data, dict):
-            self.mongo_crud.insert_one(data)
+            await self.mongo_crud.insert_one(data)
         elif isinstance(data, list):
             for item in data:
                 if isinstance(item, dict):
-                    self.mongo_crud.insert_one(item)
+                    await self.mongo_crud.insert_one(item)
                 else:
-                    print(f"Invalid data format: {item}")
+                    app_logger.error(f"Invalid data format: {item}")
         else:
-            print(f"Invalid data format: {data}")
+            app_logger.error(f"Invalid data format: {data}")
