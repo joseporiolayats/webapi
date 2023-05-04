@@ -1,10 +1,34 @@
-# This is a sample Python script.
+"""
+main.py
+
+Main script for starting the app
+"""
+import uvicorn
+from decouple import config
+from fastapi import FastAPI
+from motor.motor_asyncio import AsyncIOMotorClient
+
+DB_URL = config("DB_URL", cast=str)
+DB_NAME = config("DB_NAME", cast=str)
+
+app = FastAPI()
 
 
-def print_hi(name):
-    print(f"Hi, {name}")
+# @app.get("/")
+# async def root():
+#     return {"message": "Hello FastAPI"}
 
 
-# Press the green button in the gutter to run the script.
+@app.on_event("startup")
+async def startup_db_client():
+    app.mongodb_client = AsyncIOMotorClient(DB_URL)
+    app.mongodb = app.mongodb_client[DB_NAME]
+
+
+@app.on_event("shutdown")
+async def shutdown_db_client():
+    app.mongodb_client.close()
+
+
 if __name__ == "__main__":
-    print_hi("First commit")
+    uvicorn.run("main:app", reload=True)
