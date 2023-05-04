@@ -30,12 +30,8 @@ class PyObjectId(ObjectId):
 
 
 class MongoBaseModel(BaseModel):
-    """
-    Baseclass to prevent errors with Mongo's _id tag and python's id.
-    It also encodes properly the data for JSON parsing.
-    """
-
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
+    # id: PyObjectId = Field(default_factory=PyObjectId)
 
     class Config:
         json_encoders = {ObjectId: str}
@@ -66,6 +62,25 @@ class ClientBase(MongoBaseModel):
     role: Role = Field(...)
 
 
+class ClientUpdate(MongoBaseModel):
+    """
+    Class for updating some values of a client
+    """
+
+    name: Optional[str] = None
+    email: Optional[str] = None
+    role: Optional[Role] = None
+
+
+class ClientDB(ClientBase):
+    """
+    Class to follow convention of having a model that represent the instance
+    of the database.
+    """
+
+    pass
+
+
 class PoliciesBase(MongoBaseModel):
     """
     Policies base class schema
@@ -81,16 +96,6 @@ class PoliciesBase(MongoBaseModel):
     clientId: str = Field(...)
 
 
-class ClientUpdate(MongoBaseModel):
-    """
-    Class for updating some values of a client
-    """
-
-    name: Optional[str] = None
-    email: Optional[str] = None
-    role: Optional[Role] = None
-
-
 class PoliciesUpdate(MongoBaseModel):
     """
     Class for updating some values of the policies associated with a client
@@ -99,15 +104,6 @@ class PoliciesUpdate(MongoBaseModel):
     amountInsured: Optional[float] = None
     email: Optional[str] = None
     installmentPayment: Optional[bool] = None
-
-
-class ClientDB(ClientBase):
-    """
-    Class to follow convention of having a model that represent the instance
-    of the database.
-    """
-
-    pass
 
 
 class PoliciesDB(PoliciesBase):
