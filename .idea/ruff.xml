@@ -2,6 +2,6 @@
 <project version="4">
   <component name="RuffConfigService">
     <option name="globalRuffExecutablePath" value="$USER_HOME$/.local/bin/ruff" />
-    <option name="projectRuffExecutablePath" value="$USER_HOME$/.cache/pypoetry/virtualenvs/torchtrader-rV8O1zOy-py3.11/bin/ruff" />
+    <option name="projectRuffExecutablePath" value="$USER_HOME$/.cache/pypoetry/virtualenvs/webapi-code-assessment-dAbUCIVy-py3.11/bin/ruff" />
   </component>
 </project>
