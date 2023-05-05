@@ -11,8 +11,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 
 from webapi.routers.clients import router as clients_router
 from webapi.routers.policies import router as policies_router
-
-# from webapi.routers.users import router as users_router
+from webapi.routers.users import router as users_router
 
 
 DB_URL = config("DB_URL", cast=str)
@@ -38,7 +37,7 @@ app.add_middleware(
 
 app.include_router(clients_router, prefix="/clients", tags=["clients"])
 app.include_router(policies_router, prefix="/policies", tags=["policies"])
-# app.include_router(users_router, prefix="/users", tags=["users"])
+app.include_router(users_router, prefix="/users", tags=["users"])
 
 
 @app.on_event("startup")
