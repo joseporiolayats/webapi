@@ -9,13 +9,17 @@ from typing import Optional
 from typing import Union
 
 from fastapi import APIRouter
+from fastapi import Depends
+from fastapi import HTTPException
 from fastapi import Request
 from pydantic import EmailStr
 
+from webapi.backend.authentication import Authorization
 from webapi.backend.classes import ClientDB
 from webapi.backend.classes import PoliciesDB
 
 router = APIRouter()
+auth_handler = Authorization()
 
 
 @router.get("/", response_description="List policies")
@@ -27,9 +31,14 @@ async def list_policies(
     inceptionDate: Optional[datetime] = None,
     installmentPayment: Optional[bool] = None,
     email: Optional[EmailStr] = None,
+    userId: str = Depends(auth_handler.auth_wrapper),
 ) -> List[PoliciesDB]:
     query = {}
 
+    userId = Depends(auth_handler.auth_wrapper)
+    user = await request.app.mongodb["users"].find_one({"_id": userId})
+    if user["role"] != "admin":
+        raise HTTPException(status_code=401, detail="Content restricted to admins")
     #
     if amountInsured:
         query["amountInsured"] = amountInsured
@@ -52,7 +61,7 @@ async def list_policies(
     "/by_client_name/{client_name}", response_description="List policies by client name"
 )
 async def list_policies_by_client_name(
-    request: Request, client_name: str
+    request: Request, client_name: str, userId: str = Depends(auth_handler.auth_wrapper)
 ) -> Union[List[PoliciesDB], None]:
     pipeline = [
         {"$match": {"name": client_name}},
@@ -65,6 +74,10 @@ async def list_policies_by_client_name(
             }
         },
     ]
+    userId = Depends(auth_handler.auth_wrapper)
+    user = await request.app.mongodb["users"].find_one({"_id": userId})
+    if user["role"] != "admin":
+        raise HTTPException(status_code=401, detail="Content restricted to admins")
 
     result = await request.app.mongodb["clients"].aggregate(pipeline).to_list(None)
 
@@ -80,7 +93,7 @@ async def list_policies_by_client_name(
 
 @router.get("/by_policy/{policy_id}", response_description="List client from policy")
 async def list_client_by_policy(
-    request: Request, policy_id: str
+    request: Request, policy_id: str, userId: str = Depends(auth_handler.auth_wrapper)
 ) -> Union[List[ClientDB], None]:
     pipeline = [
         {"$match": {"id": policy_id}},
@@ -111,7 +124,10 @@ async def list_client_by_policy(
     response_description="List client datafield from policy",
 )
 async def list_client_by_policy_with_datafield(
-    request: Request, policy_id: str, datafield: str
+    request: Request,
+    policy_id: str,
+    datafield: str,
+    userId: str = Depends(auth_handler.auth_wrapper),
 ) -> Union[List[ClientDB] | str | dict, None]:
     pipeline = [
         {"$match": {"id": policy_id}},
