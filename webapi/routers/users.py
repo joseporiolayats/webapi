@@ -70,6 +70,7 @@ async def login(request: Request, loginUser: LoginBase = Body(...)) -> JSONRespo
     """
     try:
         user = request.app.cache["clients"][loginUser.password]["email"]
+
         if user == loginUser.email:
             token = auth_handler.encode_token(
                 request.app.cache["clients"][loginUser.password]["id"]
