@@ -56,10 +56,12 @@ async def list_policies(
     Returns:
         List[PoliciesDB]: A list of filtered policy objects.
     """
-    user = await request.app.mongodb["clients"].find_one({"_id": userId})
+    user = await request.app.mongodb["clients"].find_one({"id": userId})
+    print(user)
     if user is None or user["role"] != "admin":
         raise HTTPException(status_code=401, detail="Content restricted to admins")
-    query = {}
+
+    query = {"id": userId}
     #
     if amountInsured:
         query["amountInsured"] = amountInsured
@@ -73,7 +75,7 @@ async def list_policies(
         query["email"] = email
     if installmentPayment:
         query["installmentPayment"] = installmentPayment
-
+    print(f"Query is {query}")
     full_query = request.app.mongodb["policies"].find(query).sort("_id", 1)
     return [PoliciesDB(**raw_customers) async for raw_customers in full_query]
 
@@ -96,6 +98,12 @@ async def list_policies_by_client_name(
         Union[List[PoliciesDB], None]: A list of policy objects with the
         given client name or None if not found.
     """
+
+    # Authentication
+    user = await request.app.mongodb["clients"].find_one({"id": userId})
+    if user is None or user["role"] != "admin":
+        raise HTTPException(status_code=401, detail="Content restricted to admins")
+
     pipeline = [
         {"$match": {"name": client_name}},
         {
@@ -107,10 +115,6 @@ async def list_policies_by_client_name(
             }
         },
     ]
-
-    user = await request.app.mongodb["clients"].find_one({"email": userId})
-    if user is None or user["role"] != "admin":
-        raise HTTPException(status_code=401, detail="Content restricted to admins")
 
     result = await request.app.mongodb["clients"].aggregate(pipeline).to_list(None)
 
@@ -139,6 +143,12 @@ async def list_client_by_policy(
         Union[List[ClientDB], None]: A list of client objects
          associated with the policy or None if not found.
     """
+
+    # Authentication
+    user = await request.app.mongodb["clients"].find_one({"id": userId})
+    if user is None or user["role"] != "admin":
+        raise HTTPException(status_code=401, detail="Content restricted to admins")
+
     pipeline = [
         {"$match": {"id": policy_id}},
         {
@@ -150,9 +160,8 @@ async def list_client_by_policy(
             }
         },
     ]
-
     result = await request.app.mongodb["policies"].aggregate(pipeline).to_list(None)
-    print(result)
+
     if result:
         return [
             ClientDB(**client)
