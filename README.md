@@ -8,10 +8,10 @@ extend its capabilities.
 ##  Capabilities
 This app is able to provide the following:
 
--[x] Get user data filtered by user ID. Accessed by roles "users" and "admin"
--[x] Get user data filtered by user name. Accessed by roles "users" and "admin"
--[x] Get the list of policies linked to a user name. Accessed by role "admin"
--[x] Get the user linked to a policy number. Accessed by role "admin"
+1. [x] Get user data filtered by user ID. Accessed by roles "users" and "admin"
+2. [x] Get user data filtered by user name. Accessed by roles "users" and "admin"
+3. [x] Get the list of policies linked to a user name. Accessed by role "admin"
+4. [x] Get the user linked to a policy number. Accessed by role "admin"
 
 ## License
 - All the software is opensource and free for personal and commercial use, except MongoDB Atlas which is a service running in a free tier.
