@@ -1,7 +1,7 @@
 """
 webapi/routers/policies.py
 
-Router for the /policies API calls
+This module contains the router for handling /policies API calls.
 """
 from datetime import datetime
 from typing import List
@@ -33,12 +33,33 @@ async def list_policies(
     email: Optional[EmailStr] = None,
     userId: str = Depends(auth_handler.auth_wrapper),
 ) -> List[PoliciesDB]:
-    query = {}
+    """
+    List all policies based on the given filters.
 
-    userId = Depends(auth_handler.auth_wrapper)
-    user = await request.app.mongodb["users"].find_one({"_id": userId})
-    if user["role"] != "admin":
+    Args:
+        request (Request): FastAPI request object.
+        amountInsured (Optional[float], optional): Filter policies by amount insured.
+        Defaults to None.
+        id (Optional[str], optional): Filter policies by ID.
+        Defaults to None.
+        clientId (Optional[str], optional): Filter policies by client ID.
+        Defaults to None.
+        inceptionDate (Optional[datetime], optional): Filter policies by inception date.
+        Defaults to None.
+        installmentPayment (Optional[bool], optional): Filter policies by
+        installment payment.
+        Defaults to None.
+        email (Optional[EmailStr], optional): Filter policies by email.
+        Defaults to None.
+        userId (str, optional): User ID from the authorization wrapper.
+
+    Returns:
+        List[PoliciesDB]: A list of filtered policy objects.
+    """
+    user = await request.app.mongodb["clients"].find_one({"_id": userId})
+    if user is None or user["role"] != "admin":
         raise HTTPException(status_code=401, detail="Content restricted to admins")
+    query = {}
     #
     if amountInsured:
         query["amountInsured"] = amountInsured
@@ -63,6 +84,18 @@ async def list_policies(
 async def list_policies_by_client_name(
     request: Request, client_name: str, userId: str = Depends(auth_handler.auth_wrapper)
 ) -> Union[List[PoliciesDB], None]:
+    """
+    List policies by the given client name.
+
+    Args:
+        request (Request): FastAPI request object.
+        client_name (str): Client name to filter policies by.
+        userId (str, optional): User ID from the authorization wrapper.
+
+    Returns:
+        Union[List[PoliciesDB], None]: A list of policy objects with the
+        given client name or None if not found.
+    """
     pipeline = [
         {"$match": {"name": client_name}},
         {
@@ -74,9 +107,9 @@ async def list_policies_by_client_name(
             }
         },
     ]
-    userId = Depends(auth_handler.auth_wrapper)
-    user = await request.app.mongodb["users"].find_one({"_id": userId})
-    if user["role"] != "admin":
+
+    user = await request.app.mongodb["clients"].find_one({"email": userId})
+    if user is None or user["role"] != "admin":
         raise HTTPException(status_code=401, detail="Content restricted to admins")
 
     result = await request.app.mongodb["clients"].aggregate(pipeline).to_list(None)
@@ -95,6 +128,17 @@ async def list_policies_by_client_name(
 async def list_client_by_policy(
     request: Request, policy_id: str, userId: str = Depends(auth_handler.auth_wrapper)
 ) -> Union[List[ClientDB], None]:
+    """
+    List the client associated with the given policy ID.
+    Args:
+    request (Request): FastAPI request object.
+    policy_id (str): Policy ID to find the associated client.
+    userId (str, optional): User ID from the authorization wrapper.
+
+    Returns:
+        Union[List[ClientDB], None]: A list of client objects
+         associated with the policy or None if not found.
+    """
     pipeline = [
         {"$match": {"id": policy_id}},
         {
@@ -115,44 +159,5 @@ async def list_client_by_policy(
             for policy in result
             for client in policy.get("client_info", [])
         ]
-    else:
-        return None
-
-
-@router.get(
-    "/by_policy/{policy_id}/{datafield}",
-    response_description="List client datafield from policy",
-)
-async def list_client_by_policy_with_datafield(
-    request: Request,
-    policy_id: str,
-    datafield: str,
-    userId: str = Depends(auth_handler.auth_wrapper),
-) -> Union[List[ClientDB] | str | dict, None]:
-    pipeline = [
-        {"$match": {"id": policy_id}},
-        {
-            "$lookup": {
-                "from": "clients",
-                "localField": "clientId",
-                "foreignField": "id",
-                "as": "client_info",
-            }
-        },
-    ]
-    user = await request.app.mongodb["users"].find_one({"_id": userId})
-    if user["role"] != "admin":
-        raise HTTPException(status_code=401, detail="Content restricted to admins")
-
-    result = await request.app.mongodb["policies"].aggregate(pipeline).to_list(None)
-
-    if result:
-        answer = [
-            ClientDB(**client)
-            for policy in result
-            for client in policy.get("client_info", [])
-        ]
-
-        return dict(answer[0])[datafield]
     else:
         return None
