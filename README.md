@@ -113,3 +113,11 @@ server: uvicorn
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODM1MzcxMzUsImlhdCI6MTY4MzUzNTAzNSwic3ViIjoiYTBlY2U1ZGItY2QxNC00ZjIxLTgxMmYtOTY2NjMzZTdiZTg2In0.ejLX9eno6b5bxWPR296M_AvWiTMzPXPpJWBnw11_g94"
 }
 ```
+Then you can copy the token and use it for accessing the restricted areas.
+```commandline
+http GET http://localhost:8000/policies Authorization:"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODM1MzcxMzUsImlhdCI6MTY4MzUzNTAzNSwic3ViIjoiYTBlY2U1ZGItY2QxNC00ZjIxLTgxMmYtOTY2NjMzZTdiZTg2In0.ejLX9eno6b5bxWPR296M_AvWiTMzPXPpJWBnw11_g94"
+
+```
+
+## Future work
+This project could be drastically improved by adding a frontend, like React or Next.js.
