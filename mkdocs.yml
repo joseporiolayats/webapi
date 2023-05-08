@@ -71,7 +71,14 @@ nav:
       - Problem: problem.md
       - Data: data.md
       - Solution: solution.md
-  - Use-case: usage.md
+  - Use-case: api_documentation.md
+  - Data handling:
+      - Database: database.md
+      - Dataflow: dataflow.md
+      - JSON handler: json_handler.md
+      - Preload data into DB: preload_data.md
+      - Store JSON: store_json.md
+  - Authentication: authentication.md
 
 
 # to navigate with `/site` content correctly
