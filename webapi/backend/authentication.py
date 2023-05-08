@@ -6,11 +6,14 @@ from datetime import timedelta
 from datetime import timezone
 
 import jwt
+from decouple import config
 from fastapi import HTTPException
 from fastapi import Security
 from fastapi.security import HTTPAuthorizationCredentials
 from fastapi.security import HTTPBearer
 from passlib.context import CryptContext
+
+SECRET_KEY = config("SECRET_KEY", cast=str)
 
 
 class Authorization:
@@ -20,9 +23,11 @@ class Authorization:
 
     security = HTTPBearer()
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-    secret = "SuperSecretString"
 
-    def get_password_hash(self, password):
+    def __init__(self, secret: str = SECRET_KEY):
+        self.secret = secret
+
+    def get_password_hash(self, password: str) -> str:
         """
         Hash the given password.
 
@@ -34,7 +39,7 @@ class Authorization:
         """
         return self.pwd_context.hash(password)
 
-    def verify_password(self, plain_password, hashed_password):
+    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         """
         Verify if the plain password matches the hashed password.
 
@@ -96,4 +101,5 @@ class Authorization:
         Returns:
             str: User ID from the decoded token.
         """
+
         return self.decode_token(auth.credentials)
