@@ -1,3 +1,6 @@
+"""
+webapi/data/json_handler.py
+"""
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -10,17 +13,27 @@ from webapi.logs.logger import app_logger
 
 class JSONData:
     def __init__(self, url: str):
+        """
+        Initialize the JSONData class.
+
+        Args:
+            url: The URL for fetching JSON data.
+        """
         self.url = url
 
     async def fetch_data_from_json_url(
         self, url: Optional[str] = None
     ) -> Union[Dict, List, None]:
-        # if self.url is None and url is None:
-        #     app_logger.error("No url provided")
-        #     raise ValueError("Can't fetch data")
+        """
+        Fetch JSON data from the provided URL.
 
-        # self.url = url if url is not None else next
+        Args:
+            url: The URL for fetching JSON data (optional).
 
+        Returns:
+            A dictionary or a list containing the fetched JSON data,
+             or None if an error occurs.
+        """
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(self.url) as response:
@@ -31,4 +44,5 @@ class JSONData:
                 return None
 
     async def return_data_in_json(self):
+        # Method not implemented
         pass
