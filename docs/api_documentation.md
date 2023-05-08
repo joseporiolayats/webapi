@@ -1,187 +1,256 @@
+# **API Documentation**
 
-# API Documentation
+This documentation covers the API endpoints for the `clients`, `policies`, and `users` routes.
 
-This document describes the API endpoints for the FastAPI application, including authentication, user registration, login, and accessing policy data.
 
-## Table of Contents
+## **Clients**
 
-- [Authentication](#authentication)
-- [User Registration](#user-registration)
-- [User Login](#user-login)
-- [Get User Data](#get-user-data)
-- [Get Policy Data](#get-policy-data)
 
-## Authentication
+### **List clients**
 
-The application uses JWT (JSON Web Tokens) for authentication. After registering or logging in, a JWT token is returned. This token must be included in the `Authorization` header for all requests to restricted endpoints.
+Endpoint: `/clients/`
 
-## User Registration
+Method: `GET`
 
-**Endpoint:** `/register`
+Description: Lists all clients based on the given filters.
 
-**Method:** `POST`
+Query Parameters:
 
-**Request Body:**
 
-- `username` (string): The desired username.
-- `email` (string): The user's email address.
-- `password` (string): The user's password.
 
-**Response:**
+* `name` (optional, string): Filter clients by name.
+* `id` (optional, string): Filter clients by ID.
+* `role` (optional, string): Filter clients by role.
+* `email` (optional, string): Filter clients by email.
 
-A JSON object containing the newly created user's data.
+Example:
 
-**Example Request:**
-
-```bash
-http POST http://localhost:8000/register username="newuser" email="newuser@example.com" password="mypassword"
+```commandline
+http GET 'http://localhost:8000/clients?name=John&id=1&role=admin&email=john@example.com' "Authorization: Bearer $TOKEN"
 ```
 
 
-## **User Login**
+Success Response:
 
-Endpoint: `/login`
+
+
+* Code: `200 OK`
+* Content: List of filtered client objects.
+
+
+### **List clients by name**
+
+Endpoint: `/clients/name/{name}`
+
+Method: `GET`
+
+Description: Lists clients with the given name.
+
+Path Parameters:
+
+
+
+* `name` (required, string): Name to filter clients by.
+
+Example:
+
+
+```commandline
+http GET 'http://localhost:8000/clients/name/John' "Authorization: Bearer $TOKEN"
+```
+
+
+Success Response:
+
+
+
+* Code: `200 OK`
+* Content: List of client objects with the given name.
+
+
+### **List clients by filter**
+
+Endpoint: `/clients/{filter}/{value}`
+
+Method: `GET`
+
+Description: Lists clients based on the given filter and value.
+
+Path Parameters:
+
+
+
+* `filter` (required, string): Key value for which to select the client.
+* `value` (required, string): Value to filter clients by.
+
+Example:
+
+```commandline
+http GET 'http://localhost:8000/clients/role/admin' "Authorization: Bearer $TOKEN"
+```
+
+
+Success Response:
+
+
+
+* Code: `200 OK`
+* Content: List of client objects with the given filter and value.
+
+
+## **Policies**
+
+
+### **List policies**
+
+Endpoint: `/policies/`
+
+Method: `GET`
+
+Description: Lists all policies based on the given filters.
+
+Query Parameters:
+
+
+
+* `amountInsured` (optional, float): Filter policies by amount insured.
+* `id` (optional, string): Filter policies by ID.
+* `clientId` (optional, string): Filter policies by client ID.
+* `inceptionDate` (optional, datetime): Filter policies by inception date.
+* `installmentPayment` (optional, bool): Filter policies by installment payment.
+* `email` (optional, string): Filter policies by email.
+
+Example:
+```commandline
+http GET 'http://localhost:8000/policies?amountInsured=1000&id=1&clientId=1&inceptionDate=2023-05-01&installmentPayment=true&email=john@example.com' "Authorization: Bearer $TOKEN"
+```
+
+
+Success Response:
+
+
+
+* Code: `200 OK`
+* Content: List of filtered policy objects.
+
+
+### **List policies by client name**
+
+Endpoint: `/policies/by_client_name/{client_name}`
+
+Method: `GET`
+
+Description: Lists policies by the given client name.
+
+Path Parameters:
+
+
+
+* `client_name` (required, string): Client name to filter policies by.
+
+Example:
+
+```commandline
+http GET 'http://localhost:8000/policies/by_client_name/John' "Authorization: Bearer $TOKEN"
+```
+
+
+Success Response:
+
+
+
+* Code: `200 OK`
+* Content: List of policy objects with the given client name or None if not found.
+
+
+### **List client by policy**
+
+**Endpoint: `/policies/by_policy/{policy_id}`
+
+Method: `GET`
+
+Description: Lists the client associated with the given policy ID.
+
+Path Parameters:
+
+
+
+* `policy_id` (required, string): Policy ID to find the associated client.
+
+Example:
+
+```commandline
+http GET 'http://localhost:8000/policies/by_policy/{policy_id}' "Authorization: Bearer $TOKEN"
+```
+
+
+Success Response:
+
+
+
+* Code: `200 OK`
+* Content: List of client objects associated with the policy or None if not found.
+
+
+## **Users**
+
+
+### **Register user**
+
+Endpoint: `/users/register`
 
 Method: `POST`
+
+Description: Registers a new user in the system.
 
 Request Body:
 
 
 
-* `email` (string): The user's email address.
-* `password` (string): The user's password.
+* `newUser` (required, UserBase): New user object.
 
-Response:
+Example:
 
-A JSON object containing the JWT token.
-
-Example Request:
-
-bash
-
-
-```
-http POST http://localhost:8000/login email="britneyblankenship@quotezart.com" password="mypassword"
+```commandline
+http POST 'http://localhost:8000/users/register' newUser:='{"username": "newuser", "email": "newuser@example.com", "password": "mypassword", "role": "user"}'
 ```
 
 
-
-## **Get User Data**
-
-Endpoint: `/me`
-
-Method: `GET`
-
-Headers:
+Success Response:
 
 
 
-* `Authorization`: Bearer {your_jwt_token}
-
-Response:
-
-A JSON object containing the logged-in user's data.
-
-Example Request:
-
-bash
+* Code: `201 CREATED`
+* Content: Created user data.
 
 
-```
-http GET http://localhost:8000/me "Authorization: Bearer {your_jwt_token}"
-```
+### **Login user**
 
+Endpoint: `/users/login`
 
+Method: `POST`
 
-## **Get Policy Data**
+Description: Logs in a user and returns an access token.
 
-
-### **List all policies**
-
-Endpoint: `/policies`
-
-Method: `GET`
-
-Headers:
+Request Body:
 
 
 
-* `Authorization`: Bearer {your_jwt_token}
+* `username` (required, string): The user's username.
+* `password` (required, string): The user's password.
 
-Response:
+Example:
 
-A JSON array containing all the policy data.
-
-Example Request:
-
-bash
-
-
-```
-http GET http://localhost:8000/policies "Authorization: Bearer {your_jwt_token}"
+```commandline
+http POST 'http://localhost:8000/users/login' username='myusername' password='mypassword'
 ```
 
 
-
-### **Get policy by ID**
-
-Endpoint: `/policies/{policy_id}`
-
-Method: `GET`
-
-Path Parameters:
+Success Response:
 
 
 
-* `policy_id` (string): The ID of the policy.
+* Code: `200 OK`
+* Content: Access token.
 
-Headers:
-
-
-
-* `Authorization`: Bearer {your_jwt_token}
-
-Response:
-
-A JSON object containing the policy data for the specified ID.
-
-Example Request:
-
-bash
-
-
-```
-http GET http://localhost:8000/policies/64cceef9-3a01-49ae-a23b-3761b604800b "Authorization: Bearer {your_jwt_token}"
-```
-
-
-
-### **Get policies by user ID**
-
-Endpoint: `/policies/user/{user_id}`
-
-Method: `GET`
-
-Path Parameters:
-
-
-
-* `user_id` (string): The ID of the user.
-
-Headers:
-
-
-
-* `Authorization`: Bearer {your_jwt_token}
-
-Response:
-
-A JSON array containing the policy data for the specified user ID.
-
-Example Request:
-
-bash
-
-
-```
-http GET http://localhost:8000/policies/user/a0ece5db-cd14-4f21-812f-966633e
+Note: Replace `localhost:8000` with the appropriate base URL of your API. Also, ensure that you have httpie installed and available on your system.

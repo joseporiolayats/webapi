@@ -102,7 +102,7 @@ http POST localhost:8000/users/login email="britneyblankenship@quotezart.com"
 password="a0ece5db-cd14-4f21-812f-966633e7be86"
 ```
 Which returns
-```json
+```http request
 HTTP/1.1 200 OK
 content-length: 200
 content-type: application/json
@@ -115,8 +115,46 @@ server: uvicorn
 ```
 Then you can copy the token and use it for accessing the restricted areas.
 ```commandline
-http GET http://localhost:8000/policies Authorization:"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODM1MzcxMzUsImlhdCI6MTY4MzUzNTAzNSwic3ViIjoiYTBlY2U1ZGItY2QxNC00ZjIxLTgxMmYtOTY2NjMzZTdiZTg2In0.ejLX9eno6b5bxWPR296M_AvWiTMzPXPpJWBnw11_g94"
+http GET http://localhost:8000/policies Authorization:"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODM1Njc3MTMsImlhdCI6MTY4MzU2NTYxMywic3ViIjoiYTBlY2U1ZGItY2QxNC00ZjIxLTgxMmYtOTY2NjMzZTdiZTg2In0.rM4L3NEbGnDnsjP0NNmD6IEpH22Hcmf9stBkYzm0Itk"
 
+```
+
+In order to make things easier, we can use some command line magic in order to store the token
+into an environment variable
+```commandline
+export TOKEN=$(curl -s -X POST -H 'Content-Type: application/json' -d '{"email": "britneyblankenship@quotezart.com", "password": "a0ece5db-cd14-4f21-812f-966633e7be86"}' http://localhost:8000/users/login | jq -r '.token')
+
+```
+
+Once you got the token, you copy it and use it to access the restricted sites, or use the
+environment variable TOKEN
+```commandline
+echo $TOKEN
+```
+
+### Policies by client name
+Let's try and make the API call to obtain the policies associated to a client name
+```commandline
+http GET http://localhost:8000/policies/by_client_name/Britney "Authorization: Bearer $TOKEN"
+```
+And the answer is positive! we get  all the results! (Not copying here because there are a lot)
+
+### Client name by policy
+Now we try the search on reverse: looking up who's the owner of a specified policy.
+```commandline
+http GET http://localhost:8000/policies/by_policy/0df3bcef-7a14-4dd7-a42d-fa209d0d5804 "Authorization: Bearer $TOKEN"
+```
+
+### Client data from name
+Let's retrieve the personal data of a client.
+```commandline
+http GET http://localhost:8000/clients/name/{name} "Authorization: Bearer $TOKEN"
+```
+
+### Client data from any of the stored items
+Retrieve the personal data of a client by using the name, the phone, the email...
+```commandline
+http GET http://localhost:8000/clients/{filter}/{value} "Authorization: Bearer $TOKEN"
 ```
 
 ## Future work
