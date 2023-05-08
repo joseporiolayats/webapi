@@ -14,17 +14,49 @@ from passlib.context import CryptContext
 
 
 class Authorization:
+    """
+    Class to handle user authorization and token generation.
+    """
+
     security = HTTPBearer()
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
     secret = "SuperSecretString"
 
     def get_password_hash(self, password):
+        """
+        Hash the given password.
+
+        Args:
+            password (str): Password to be hashed.
+
+        Returns:
+            str: Hashed password.
+        """
         return self.pwd_context.hash(password)
 
     def verify_password(self, plain_password, hashed_password):
+        """
+        Verify if the plain password matches the hashed password.
+
+        Args:
+            plain_password (str): Plain password to be verified.
+            hashed_password (str): Hashed password to be compared.
+
+        Returns:
+            bool: True if the passwords match, False otherwise.
+        """
         return self.pwd_context.verify(plain_password, hashed_password)
 
     def encode_token(self, user_id):
+        """
+        Encode the token for the given user ID.
+
+        Args:
+            user_id (str): User ID to be encoded in the token.
+
+        Returns:
+            str: Encoded token.
+        """
         payload = {
             "exp": datetime.now(timezone.utc) + timedelta(days=0, minutes=35),
             "iat": datetime.now(timezone.utc),
@@ -33,6 +65,18 @@ class Authorization:
         return jwt.encode(payload, self.secret, algorithm="HS256")
 
     def decode_token(self, token):
+        """
+        Decode the token and return the user ID.
+
+        Args:
+            token (str): Token to be decoded.
+
+        Returns:
+            str: User ID from the decoded token.
+
+        Raises:
+            HTTPException: If the token is expired or invalid.
+        """
         try:
             payload = jwt.decode(token, self.secret, algorithms=["HS256"])
             return payload["sub"]
@@ -42,4 +86,14 @@ class Authorization:
             raise HTTPException(status_code=401, detail="Invalid token") from e
 
     def auth_wrapper(self, auth: HTTPAuthorizationCredentials = Security(security)):
+        """
+        Wrapper function for the token decoding process.
+
+        Args:
+            auth (HTTPAuthorizationCredentials, optional):
+            FastAPI HTTPAuthorizationCredentials object.
+
+        Returns:
+            str: User ID from the decoded token.
+        """
         return self.decode_token(auth.credentials)

@@ -1,3 +1,8 @@
+"""
+webapi/data/database.py
+"""
+from typing import Optional
+
 from decouple import config
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import PyMongoError
@@ -12,28 +17,29 @@ db_collection_policies = config("DB_COLLECTION_POLICIES")
 
 
 class MongoDBAtlasCRUD:
-    def __init__(
-        self,
-        connection_string=mongodb_connection_string,
-        database_name=db_name,
-        collection_name=db_collection_clients,
-    ):
-        self.connection_string = connection_string
-        self.database_name = database_name
-        self.collection_name = collection_name
-        self.client = None
+    """
+    Class for performing CRUD operations on a MongoDB Atlas database.
+    """
+
+    def __init__(self, client, database: Optional, collection_name: Optional):
+        self.connection_string = mongodb_connection_string
+        self.database_name = db_name
+        self.collection_name = collection_name or None
+        self.client = client
         self.db = None
         self.collection = None
-
-    @classmethod
-    async def create_instance(cls, *args, **kwargs):
-        instance = cls(*args, **kwargs)
-        await instance._connect()
-        return instance
+        self.database = database if database is not None else None
 
     async def _connect(self):
+        """
+        Connect to the MongoDB Atlas database and collection.
+        """
         try:
-            self.client = AsyncIOMotorClient(self.connection_string)
+            self.client = (
+                AsyncIOMotorClient(self.connection_string)
+                if self.database is None
+                else self.database
+            )
             self.db = self.client[self.database_name]
             self.collection = self.db[self.collection_name]
             app_logger.info(
@@ -44,7 +50,17 @@ class MongoDBAtlasCRUD:
             app_logger.error(f"Error connecting to MongoDB Atlas: {e}")
 
     async def insert_one(self, document):
+        """
+        Insert a document into the collection.
+
+        Args:
+            document: The document to insert.
+
+        Returns:
+            The inserted ID of the document.
+        """
         try:
+            await self._connect()
             result = await self.collection.insert_one(document)
             app_logger.info(f"Inserted document with ID {result.inserted_id}")
             return result.inserted_id
@@ -52,6 +68,15 @@ class MongoDBAtlasCRUD:
             app_logger.error(f"Error inserting document: {e}")
 
     async def find_one(self, query):
+        """
+        Find a single document in the collection based on a query.
+
+        Args:
+            query: The query to filter documents.
+
+        Returns:
+            The found document, if any.
+        """
         try:
             result = await self.collection.find_one(query)
             if result:
@@ -63,6 +88,16 @@ class MongoDBAtlasCRUD:
             app_logger.error(f"Error finding document: {e}")
 
     async def update_one(self, query, update):
+        """
+        Update a single document in the collection based on a query.
+
+        Args:
+            query: The query to filter documents.
+            update: The update to apply to the document.
+
+        Returns:
+            The number of modified documents.
+        """
         try:
             result = await self.collection.update_one(query, update)
             app_logger.info(f"Updated {result.modified_count} document(s)")
@@ -71,6 +106,15 @@ class MongoDBAtlasCRUD:
             app_logger.error(f"Error updating document: {e}")
 
     async def delete_one(self, query):
+        """
+        Delete a single document in the collection based on a query.
+
+        Args:
+            query: The query to filter documents.
+
+        Returns:
+            The number of deleted documents.
+        """
         try:
             result = await self.collection.delete_one(query)
             app_logger.info(f"Deleted {result.deleted_count} document(s)")
