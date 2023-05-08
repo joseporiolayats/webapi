@@ -1,3 +1,8 @@
+"""
+webapi/data/database.py
+"""
+from typing import Optional
+
 from decouple import config
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import PyMongoError
@@ -12,7 +17,20 @@ db_collection_policies = config("DB_COLLECTION_POLICIES")
 
 
 class MongoDBAtlasCRUD:
-    def __init__(
+    def __init__(self, client, database: Optional, collection_name: Optional):
+        self.connection_string = None
+        self.database_name = db_name
+        self.collection_name = collection_name or None
+        self.client = client
+        self.db = None
+        self.collection = None
+        self.database = database if database is not None else None
+
+    # def __del__(self):
+    #     self.client.close()
+    #     app_logger.info("Closed the MongoDB Atlas client connection")
+
+    def start_database(
         self,
         connection_string=mongodb_connection_string,
         database_name=db_name,
@@ -33,7 +51,11 @@ class MongoDBAtlasCRUD:
 
     async def _connect(self):
         try:
-            self.client = AsyncIOMotorClient(self.connection_string)
+            self.client = (
+                AsyncIOMotorClient(self.connection_string)
+                if self.database is None
+                else self.database
+            )
             self.db = self.client[self.database_name]
             self.collection = self.db[self.collection_name]
             app_logger.info(
@@ -45,6 +67,7 @@ class MongoDBAtlasCRUD:
 
     async def insert_one(self, document):
         try:
+            await self._connect()
             result = await self.collection.insert_one(document)
             app_logger.info(f"Inserted document with ID {result.inserted_id}")
             return result.inserted_id

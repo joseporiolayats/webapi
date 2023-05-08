@@ -140,6 +140,9 @@ async def list_client_by_policy_with_datafield(
             }
         },
     ]
+    user = await request.app.mongodb["users"].find_one({"_id": userId})
+    if user["role"] != "admin":
+        raise HTTPException(status_code=401, detail="Content restricted to admins")
 
     result = await request.app.mongodb["policies"].aggregate(pipeline).to_list(None)
 

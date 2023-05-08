@@ -3,8 +3,8 @@ from datetime import datetime
 import pytest
 from pydantic import ValidationError
 
-from webapi.backend.classes import Client
-from webapi.backend.classes import Policies
+from webapi.backend.classes import ClientBase
+from webapi.backend.classes import PoliciesBase
 from webapi.backend.classes import Role
 
 
@@ -24,7 +24,7 @@ def test_client_validation():
         "email": "johndoe@example.com",
         "role": "admin",
     }
-    client = Client(**valid_client)
+    client = ClientBase(**valid_client)
     assert client.dict() == valid_client
 
     invalid_client = {
@@ -34,7 +34,7 @@ def test_client_validation():
         "role": "invalid_role",
     }
     with pytest.raises(ValidationError):
-        Client(**invalid_client)
+        ClientBase(**invalid_client)
 
 
 def test_policies_validation():
@@ -46,7 +46,7 @@ def test_policies_validation():
         "installmentPayment": True,
         "clientId": "1",
     }
-    policies = Policies(**valid_policies)
+    policies = PoliciesBase(**valid_policies)
     assert policies.dict() == valid_policies
 
     invalid_policies = {
@@ -58,4 +58,4 @@ def test_policies_validation():
         "clientId": "",
     }
     with pytest.raises(ValidationError):
-        Policies(**invalid_policies)
+        PoliciesBase(**invalid_policies)

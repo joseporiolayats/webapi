@@ -48,14 +48,20 @@ async def register(request: Request, newUser: UserBase = Body(...)) -> JSONRespo
 
 @router.post("/login", response_description="Login user")
 async def login(request: Request, loginUser: LoginBase = Body(...)) -> JSONResponse:
-    user = await request.app.mongodb["users"].find_one({"email": loginUser.email})
+    try:
+        user = request.app.cache["clients"][loginUser.password]["email"]
+        # userid = await request.app.cache["clients"].
+        # find_one({"id": loginUser.password})
+        if user == loginUser.email:
+            token = auth_handler.encode_token(
+                request.app.cache["clients"][loginUser.password]["id"]
+            )
+            return JSONResponse(content={"token": token})
 
-    if (user is None) or (
-        not auth_handler.verify_password(loginUser.password, user["password"])
-    ):
-        raise HTTPException(status_code=401, detail="Invalid email and/or password")
-    token = auth_handler.encode_token(user["_id"])
-    return JSONResponse(content={"token": token})
+    except HTTPException as e:
+        raise HTTPException(
+            status_code=401, detail=f"Invalid email and/or password:{e}"
+        ) from e
 
 
 @router.get("/me", response_description="Logged in user data")

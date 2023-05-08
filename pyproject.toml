@@ -22,6 +22,7 @@ aiohttp = "^3.8.4"
 email-validator = "^2.0.0.post2"
 pyjwt = "^2.6.0"
 passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+aiocache = "^0.12.1"
 
 
 [tool.poetry.group.docs.dependencies]
@@ -42,6 +43,7 @@ ruff = "^0.0.264"
 
 [tool.poetry.group.test.dependencies]
 httpie = "^3.2.1"
+pytest-asyncio = "^0.21.0"
 
 [build-system]
 requires = ["poetry-core"]
