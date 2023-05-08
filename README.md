@@ -56,6 +56,12 @@ Supposing you installed poetry, go into the main directory of the project and ty
 poetry install
 ```
 This command will install all the required packages. You will also have a venv available.
+To activate it run
+```commandline
+poetry shell
+```
+and type `deactivate` to exit.
+
 
 Then you will need to create a .env file in the main directory.
 It has to look like this:
