@@ -1,8 +1,3 @@
-"""
-webapi/data/dataflow.py
-
-This module establishes the data flow between the source, the cache, and the database.
-"""
 from webapi.data.database import MongoDBAtlasCRUD
 from webapi.data.json_handler import JSONData
 from webapi.data.store_json import JSONDataToCache
@@ -12,54 +7,32 @@ from webapi.logs.logger import app_logger
 
 class DataFlow:
     def __init__(self, db_names, database, client):
-        """
-        Initialize the DataFlow class.
-
-        Args:
-            db_names: A list of database names.
-            database: The database instance.
-            client: The database client instance.
-        """
         self.db_names = db_names
         self.database = database
         self.client = client
+        self.data_handler = None
 
-    def check_database(self, db_name: str) -> int:
-        """
-        Count the number of documents in the specified database.
+    async def check_database(self, db_name: str) -> int:
+        try:
+            async with MongoDBAtlasCRUD(collection_name=db_name) as crud_instance:
+                count = await crud_instance.collection.count_documents({})
+            app_logger.info(f"{db_name} has {count} documents")
+            return count
+        except Exception as e:
+            app_logger.error(f"Error checking database {db_name}: {e}")
+            raise
 
-        Args:
-            db_name: The name of the database to check.
-
-        Returns:
-            The number of documents in the database.
-        """
-        return self.database[db_name].count_documents({})
-
-    async def load_cache(self, url: str, db_name: str):
-        """
-        Load data into cache for the specified database.
-
-        Args:
-            url: The URL for fetching JSON data.
-            db_name: The name of the database to load data into the cache.
-
-        Returns:
-            A dictionary of the data in the cache.
-        """
-        data_handler = JSONDataToCache(url)
-        app_logger.info(f"Collection {db_name} filled in cache")
-        data = await data_handler.load_data_to_cache(db_name)
-
-        return {d["id"]: d for d in data}
+    async def load_cache(self, url: str, db_name: str) -> dict:
+        try:
+            data_handler = JSONDataToCache(url)
+            app_logger.info(f"Loading {db_name} into cache")
+            data = await data_handler.load_data_to_cache(db_name)
+            return {d["id"]: d for d in data}
+        except Exception as e:
+            app_logger.error(f"Error loading cache for {db_name}: {e}")
+            raise
 
     def start_cache(self):
-        """
-        Initialize the cache for each database in the list of database names.
-
-        Returns:
-            A dictionary containing the initialized cache for each database.
-        """
         app_logger.info("Starting cache")
         return {db_name: "" for db_name in self.db_names}
 
@@ -71,50 +44,34 @@ class DataFlow:
         # Method not implemented
         pass
 
-    async def fill_database(self, url: str, db_name: str):
-        """
-        Fill the specified database with JSON data fetched from the provided URL.
+    async def fill_database(self, url: str, db_name: str) -> None:
+        try:
+            json_url = JSONData(url)
+            data = await json_url.fetch_data_from_json_url()
 
-        Args:
-            url: The URL for fetching JSON data.
-            db_name: The name of the database to fill.
-        """
-        json_url = JSONData(url)
-        data = await json_url.fetch_data_from_json_url()
-        mongodb_crud = MongoDBAtlasCRUD(
-            client=self.client, database=self.database, collection_name=db_name
-        )
-        data_handler = JSONDataToMongoDB(mongodb_crud, url)
-        await data_handler.store_json_data(data[db_name])
-        app_logger.info(f"Database {db_name} filled.")
+            async with MongoDBAtlasCRUD(collection_name=db_name) as mongodb_crud:
+                self.data_handler = JSONDataToMongoDB(mongodb_crud, url)
+                await self.data_handler.store_json_data(data[db_name])
+
+            app_logger.info(f"Filled database {db_name}")
+        except Exception as e:
+            app_logger.error(f"Error filling database {db_name}: {e}")
+            raise
 
     async def load_collection_to_dict(self, db_name: str) -> dict:
-        """
-        Load a collection from the specified database into a dictionary.
+        try:
+            async with MongoDBAtlasCRUD(collection_name=db_name) as crud_instance:
+                collection = crud_instance.collection
+                cursor = collection.find({})
+                data_dict = {}
 
-        Args:
-            db_name: The name of the database to load the collection from.
+                async for document in cursor:
+                    for field, value in document.items():
+                        data_dict[field] = value
 
-        Returns:
-            A dictionary containing the data from the collection.
-        """
-        # Connect to the MongoDB server using motor
-        collection = self.database[db_name]
+                    app_logger.info(f"Loaded {db_name} into dictionary")
 
-        # Get all documents from the collection as a cursor
-        cursor = collection.find({})
-
-        # Convert each document to a Python dictionary and store in a dictionary
-        data_dict = {}
-
-        async for document in cursor:
-            for field, value in document.items():
-                print(f"field: {field}, value: {value}")
-                data_dict[field] = value
-
-            app_logger.info(f"Collection {db_name} filled in cache")
-
-        app_logger.info(f"{data_dict} first entry")
-        print(data_dict)
-        # Return the dictionary
-        return data_dict
+            return data_dict
+        except Exception as e:
+            app_logger.error(f"Error loading collection {db_name} to dict: {e}")
+            raise

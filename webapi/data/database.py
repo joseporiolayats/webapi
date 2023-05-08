@@ -1,8 +1,6 @@
 """
 webapi/data/database.py
 """
-from typing import Optional
-
 from decouple import config
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import PyMongoError
@@ -18,54 +16,96 @@ db_collection_policies = config("DB_COLLECTION_POLICIES")
 
 class MongoDBAtlasCRUD:
     """
-    Class for performing CRUD operations on a MongoDB Atlas database.
+    A class to handle CRUD operations for MongoDB Atlas.
+
+    Attributes:
+        client (AsyncIOMotorClient): An asynchronous MongoDB client.
+        db (AsyncIOMotorDatabase): An asynchronous MongoDB database.
+        collection (AsyncIOMotorCollection): An asynchronous MongoDB collection.
     """
 
-    def __init__(self, client, database: Optional, collection_name: Optional):
-        self.connection_string = mongodb_connection_string
-        self.database_name = db_name
-        self.collection_name = collection_name or None
-        self.client = client
-        self.db = None
-        self.collection = None
-        self.database = database if database is not None else None
-
-    async def _connect(self):
+    def __init__(self, collection_name: str):
         """
-        Connect to the MongoDB Atlas database and collection.
-        """
-        try:
-            self.client = (
-                AsyncIOMotorClient(self.connection_string)
-                if self.database is None
-                else self.database
-            )
-            self.db = self.client[self.database_name]
-            self.collection = self.db[self.collection_name]
-            app_logger.info(
-                f"Connected to MongoDB Atlas database {self.database_name} and "
-                f"collection {self.collection_name}"
-            )
-        except PyMongoError as e:
-            app_logger.error(f"Error connecting to MongoDB Atlas: {e}")
-
-    async def insert_one(self, document):
-        """
-        Insert a document into the collection.
+        Initializes MongoDBAtlasCRUD with the given collection name.
 
         Args:
-            document: The document to insert.
+            collection_name (str): The name of the collection to be used.
+        """
+        self.client = AsyncIOMotorClient(config("DB_URL"))
+        self.db = self.client[config("DB_NAME")]
+        self.collection = self.db[collection_name]
+
+    @classmethod
+    async def create_instance(cls, collection_name: str):
+        """
+        Creates an instance of MongoDBAtlasCRUD with the given collection name.
+
+        Args:
+            collection_name (str): The name of the collection to be used.
 
         Returns:
-            The inserted ID of the document.
+            instance (MongoDBAtlasCRUD): An instance of MongoDBAtlasCRUD.
+        """
+        instance = cls(collection_name)
+        await instance._initialize()
+        return instance
+
+    async def _initialize(self) -> None:
+        """
+        Initializes the MongoDBAtlasCRUD instance by checking if the MongoDB server
+        is available.
+
+        Returns:
+            None
         """
         try:
-            await self._connect()
+            await self.client.admin.command("ismaster")
+            app_logger.info("Connected to MongoDB server")
+        except Exception as e:
+            app_logger.error(f"Error initializing MongoDBAtlasCRUD: {e}")
+            raise
+
+    async def __aenter__(self):
+        """
+        Enters the asynchronous context manager.
+
+        Returns:
+            self (MongoDBAtlasCRUD): The current instance of MongoDBAtlasCRUD.
+        """
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        """
+        Exits the asynchronous context manager and closes the MongoDB connection.
+
+        Args:
+            exc_type: The type of exception raised, if any.
+            exc_val: The instance of exception raised, if any.
+            exc_tb: The traceback object encapsulating the call stack, if any.
+
+        Returns:
+            None
+        """
+        await self.client.close()
+        app_logger.info("Closed connection to MongoDB server")
+
+    async def insert_one(self, document: dict) -> str:
+        """
+        Inserts a single document into the collection.
+
+        Args:
+            document (dict): The document to be inserted.
+
+        Returns:
+            str: The ObjectId of the inserted document as a string.
+        """
+        try:
             result = await self.collection.insert_one(document)
-            app_logger.info(f"Inserted document with ID {result.inserted_id}")
-            return result.inserted_id
-        except PyMongoError as e:
+            app_logger.info(f"Inserted document with ID: {str(result.inserted_id)}")
+            return str(result.inserted_id)
+        except Exception as e:
             app_logger.error(f"Error inserting document: {e}")
+            raise
 
     async def find_one(self, query):
         """

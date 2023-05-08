@@ -18,7 +18,7 @@ class JSONDataToMongoDB(JSONData):
         super().__init__(url)
         self.mongo_crud = mongo_crud
 
-    async def store_json_data(self, data: Union[Dict, List], database=None) -> None:
+    async def store_json_data(self, data: Union[Dict, List]) -> None:
         """
         Store JSON data into the MongoDB database.
 
