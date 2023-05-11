@@ -83,11 +83,11 @@ async def list_clients_by_name(
     query = {"name": name}
 
     user = await request.app.mongodb["clients"].find_one({"id": userId})
-    print(user)
+
     if user["role"] not in ["admin", "user"]:
         raise HTTPException(status_code=401, detail="Content restricted to admins")
 
-    query = {"id": userId}
+    query = {"name": name}
 
     full_query = request.app.mongodb["clients"].find(query).sort("_id", 1)
     return [ClientDB(**raw_customers) async for raw_customers in full_query]
@@ -119,7 +119,7 @@ async def list_clients_by_filter(
     if user["role"] not in ["admin", "user"]:
         raise HTTPException(status_code=401, detail="Content restricted to admins")
 
-    query = {"id": userId}
+    query = {filter: value}
 
     full_query = request.app.mongodb["clients"].find(query).sort("_id", 1)
     return [ClientDB(**raw_customers) async for raw_customers in full_query]
